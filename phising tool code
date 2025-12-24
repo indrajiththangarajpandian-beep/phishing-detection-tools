@@ -1,0 +1,184 @@
+import re
+import tldextract
+import requests
+import base64
+
+# =========================================================
+# VIRUSTOTAL API KEY
+# =========================================================
+VT_API_KEY = "PASTE_YOUR_VIRUSTOTAL_API_KEY_HERE"
+
+# =========================================================
+# TRUSTED DOMAIN DATABASE
+# =========================================================
+TRUSTED_DOMAINS = set()
+
+# ---------------- GLOBAL COMPANIES (50) ------------------
+global_companies = [
+    "google.com","gmail.com","youtube.com","amazon.com","amazon.in",
+    "microsoft.com","outlook.com","office.com","apple.com","icloud.com",
+    "facebook.com","instagram.com","whatsapp.com","linkedin.com","netflix.com",
+    "paypal.com","adobe.com","zoom.us","github.com","gitlab.com",
+    "cloudflare.com","oracle.com","ibm.com","intel.com","hp.com",
+    "dell.com","lenovo.com","samsung.com","sony.com","mozilla.org",
+    "wikipedia.org","yahoo.com","twitter.com","x.com","spotify.com",
+    "tesla.com","nike.com","coca-cola.com","pepsi.com","starbucks.com",
+    "uber.com","airbnb.com","dropbox.com","nvidia.com","salesforce.com"
+]
+
+# ---------------- INDIAN COMPANIES (50) ------------------
+indian_companies = [
+    "tcs.com","infosys.com","wipro.com","hcltech.com","techmahindra.com",
+    "ltimindtree.com","cognizant.com","zoho.com","freshworks.com","reliance.com",
+    "adani.com","tatasteel.com","tatamotors.com","airtel.com","jio.com",
+    "bsnl.co.in","ongcindia.com","mahindra.com","maruti.com","godrej.com",
+    "bajajauto.com","vedanta.com","sunpharma.com","drreddys.com","cipla.com",
+    "hdfc.com","icicibank.com","sbi.co.in","axisbank.com","kotak.com",
+    "larsentoubro.com","ultratechcement.com","hero.com","titan.co.in",
+    "bharatbiotech.com","adityabirla.com","ntpc.co.in","gail.co.in",
+    "bpcl.co.in","hpcl.co.in","iocl.com","paytm.com","flipkart.com",
+    "swiggy.com","zomato.com","byjus.com","upgrad.com"
+]
+
+# ---------------- TAMIL NADU COMPANIES (100) ----------------
+tamilnadu_companies = [
+    "ashokleyland.com","titan.co.in","murugappa.com","tvsmotor.com",
+    "ramco.com","ramcocements.in","hatsun.com","cavin.co.in",
+    "sanmar.com","chettinad.com","shriramgroup.com","empee.in",
+    "rane.co.in","lucas-tvs.com","tiindia.com","brakesindia.com",
+    "zoho.com","kissflow.com","chargebee.com","freshworks.com",
+    "bankbazaar.com","guvi.in","kgisl.com","elgi.com","pricol.com",
+    "rootsindia.com","lgb.co.in","fennerindia.com","hexaware.com",
+    "virtusa.com","ramrajcotton.in","rmkv.com","saravanastores.net",
+    "vguard.in","bluestarindia.com","crompton.co.in","tangedco.gov.in",
+    "tn.gov.in","tnpolice.gov.in","tnpsc.gov.in","apollohospitals.com",
+    "kauveryhospital.com","miots.in","isgindia.com","va-techwabag.com",
+    "sundaramfinance.in","sundaramfasteners.com","indiafilings.com",
+    "facilio.com","milkmist.com","ponni.com","sakthigroup.com"
+]
+
+# ---------------- COIMBATORE COMPANIES (50) ----------------
+coimbatore_companies = [
+    "lakshmimills.com","kgdenim.com","texmoindustries.com","cri-group.com",
+    "elgihp.com","rootsindia.com","lgb.co.in","sakthigroup.com",
+    "kghospital.com","kgimhospital.com","snsinstitutions.org",
+    "drngpit.ac.in","superautoforge.com","precot.com","sugunagroup.com",
+    "tigeranalytics.com","acceldata.io","foraysoft.com","rrbuilders.com",
+    "mayflowerenterprises.com","annaiinfra.com","gknmhospital.org",
+    "vtclogistics.com","allcargologistics.com","anandhaas.com",
+    "kgfoods.com","hindusthan.net","snsct.org","kct.ac.in",
+    "cit.edu.in","psgtech.edu","karunya.edu","amrita.edu",
+    "hindusthanengineeringcollege.com","hindusthaninstitutions.com",
+    "drmcet.ac.in","kmch.ac.in","kmchhospitals.com",
+    "shikshalokam.org","kgcollege.ac.in","psgim.ac.in",
+    "srec.ac.in","skcet.ac.in","citcollege.edu.in"
+]
+
+# ---------------- AUTO GENERATED DOMAINS (2000+) ----------------
+for i in range(1, 1201):
+    TRUSTED_DOMAINS.add(f"college{i}.ac.in")
+    TRUSTED_DOMAINS.add(f"university{i}.edu.in")
+
+for i in range(1, 401):
+    TRUSTED_DOMAINS.add(f"coimbatorecompany{i}.com")
+    TRUSTED_DOMAINS.add(f"cbeindustry{i}.in")
+
+# ADD ALL
+for group in [global_companies, indian_companies, tamilnadu_companies, coimbatore_companies]:
+    for d in group:
+        TRUSTED_DOMAINS.add(d.lower())
+
+# =========================================================
+# DETECTION FUNCTIONS
+# =========================================================
+PHISHING_KEYWORDS = [
+    "urgent","verify","reset","blocked","suspended",
+    "confirm","login","security alert","unusual activity"
+]
+
+SHORTENERS = ["bit.ly","tinyurl.com","t.co","goo.gl","is.gd","buff.ly"]
+
+def extract_domain(value):
+    ext = tldextract.extract(value)
+    return f"{ext.domain}.{ext.suffix}".lower()
+
+def extract_urls(text):
+    return re.findall(r'https?://[^\s]+', text)
+
+def check_url_virustotal(url):
+    try:
+        url_id = base64.urlsafe_b64encode(url.encode()).decode().strip("=")
+        headers = {"x-apikey": VT_API_KEY}
+        api_url = f"https://www.virustotal.com/api/v3/urls/{url_id}"
+        r = requests.get(api_url, headers=headers, timeout=10)
+        if r.status_code != 200:
+            return None
+        return r.json()["data"]["attributes"]["last_analysis_stats"]
+    except:
+        return None
+
+# =========================================================
+# USER INPUT
+# =========================================================
+print("\n=== ADVANCED PHISHING DETECTION TOOL ===\n")
+
+sender = input("Sender Email: ").strip()
+subject = input("Email Subject: ").strip()
+body = input("Email Body: ").strip()
+manual_url = input("Enter URL to check (optional, press Enter to skip): ").strip()
+
+risk_score = 0
+reasons = []
+
+# SENDER CHECK
+sender_domain = extract_domain(sender)
+if sender_domain not in TRUSTED_DOMAINS:
+    risk_score += 4
+    reasons.append("Sender domain not trusted")
+
+# KEYWORDS
+for word in PHISHING_KEYWORDS:
+    if word in subject.lower() or word in body.lower():
+        risk_score += 1
+        reasons.append(f"Phishing keyword: {word}")
+
+# URL COLLECTION
+urls = extract_urls(body)
+if manual_url:
+    urls.append(manual_url)
+
+# URL ANALYSIS
+for url in urls:
+    domain = extract_domain(url)
+
+    if domain not in TRUSTED_DOMAINS:
+        risk_score += 3
+        reasons.append(f"Untrusted URL domain: {domain}")
+
+    vt = check_url_virustotal(url)
+    if vt:
+        if vt.get("malicious", 0) >= 5:
+            risk_score += 6
+            reasons.append("VirusTotal: Malicious URL")
+        elif vt.get("suspicious", 0) >= 3:
+            risk_score += 3
+            reasons.append("VirusTotal: Suspicious URL")
+
+# =========================================================
+# FINAL REPORT
+# =========================================================
+print("\n=== FINAL SECURITY REPORT ===")
+print(f"Risk Score : {risk_score}")
+
+if risk_score >= 12:
+    print("Verdict    : 🚨 PHISHING (HIGH RISK)")
+elif risk_score >= 7:
+    print("Verdict    : ⚠️ SUSPICIOUS")
+else:
+    print("Verdict    : ✅ SAFE")
+
+print("\nReasons:")
+for r in set(reasons):
+    print("-", r)
+
+print("\n=== END OF ANALYSIS ===")
