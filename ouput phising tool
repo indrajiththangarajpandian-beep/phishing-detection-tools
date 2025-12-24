@@ -1,0 +1,72 @@
+python3 phishing_detector.py
+
+
+=== ADVANCED PHISHING DETECTION TOOL ===
+
+Sender Email: indrajith@gmail.com
+Email Subject: welcome indrajith
+Email Body: please enter your deatils to complete your verfication in your google account
+Enter URL to check (optional, press Enter to skip): http://google.com/        
+
+=== FINAL SECURITY REPORT ===
+Risk Score : 0
+Verdict    : ✅ SAFE
+
+Reasons:
+
+=== END OF ANALYSIS ===
+                                                                                                                                                                                                                                           
+┌──(kali㉿kali)-[~]
+└─$ python3 phishing_detector.py        
+
+
+=== ADVANCED PHISHING DETECTION TOOL ===
+
+Sender Email: kgisl@gmail.com
+Email Subject: welcome to kgisl
+Email Body: your are shortlisted to our company please click the link to enter your deatils and get verifyed
+Enter URL to check (optional, press Enter to skip): https:'kgisll.com
+
+=== FINAL SECURITY REPORT ===
+Risk Score : 4
+Verdict    : ✅ SAFE
+
+Reasons:
+- Untrusted URL domain: https.
+- Phishing keyword: verify
+
+=== END OF ANALYSIS 
+Trusted domains loaded: 3408
+
+=== ADVANCED PHISHING EMAIL & URL DETECTOR ===
+
+Sender Email: naveenkumar23@karunya.edu.in
+Subject: welcome to karunya university
+Email Body: dear student your are now a part of karunya thanks for choosing karunya
+
+=== FINAL SECURITY REPORT ===
+Verdict    : ✅ SAFE
+Risk Score : 4
+
+Reasons:
+- Sender domain not trusted
+
+=== END OF ANALYSIS ===
+=== ADVANCED PHISHING DETECTION TOOL ===
+
+Sender Email: netflix.gmail.com.\
+Email Subject: password reset
+Email Body: reset your password as fast as fast to stay protected
+Enter URL to check (optional, press Enter to skip): https://netflix..com/netflix/login
+
+=== FINAL SECURITY REPORT ===
+Risk Score : 8
+Verdict    : ⚠️ SUSPICIOUS
+
+Reasons:
+- Phishing keyword: reset
+- Untrusted URL domain: .com
+- Sender domain not trusted
+
+=== END OF ANALYSIS ===
+                                             
